@@ -398,7 +398,7 @@ input::placeholder { color: var(--text3); }
 // CONFIG
 // ─────────────────────────────────────────────
 const SHEET_ID  = '1_5Pe5IhxEVSFo5vUf1aQ-Dnccn1ullEuQskX1f1SygA';
-const CLIENT_ID = '902154704405-ctib443s4l03di4daat3tk427cuqc5mf.apps.googleusercontent.com'; // ← paste your Google OAuth 2.0 Client ID here
+const CLIENT_ID = ''; // ← paste your Google OAuth 2.0 Client ID here
 
 const PAR = [4,4,4,4,5,3,4,3,4];
 const SI  = [3,5,4,1,8,6,7,9,2];
@@ -812,12 +812,7 @@ function buildPayload() {
     });
     values.push(row);
   }
-  const tot = ['Tot'];
-  players.forEach((_, pi) => {
-    tot.push(scores[pi].reduce((a, h) => a + (h.score || 0), 0));
-    tot.push(scores[pi].reduce((a, h) => a + (h.putts || 0), 0));
-  });
-  values.push(tot);
+  // Row 11 in the sheet contains SUM formulas — do not overwrite
   return values;
 }
 
@@ -825,16 +820,15 @@ function renderPostPreview(values) {
   const cols = ['Hole', ...players.flatMap(p => [p, 'Putts'])];
   const th   = cols.map(c => `<th>${c}</th>`).join('');
   const rows = values.map((row, ri) => {
-    const isTotal = ri === values.length - 1;
     const cells   = row.map((cell, ci) => {
       let style = '';
-      if (ci > 0 && ci % 2 === 1 && !isTotal && cell !== '') {
+      if (ci > 0 && ci % 2 === 1 && cell !== '') {
         const k = grossKey(Number(cell), PAR[ri]);
         if (k) style = ` style="${GROSS_STYLE[k]};border-radius:3px;padding:1px 4px;"`;
       }
       return `<td><span${style}>${cell === '' ? '—' : cell}</span></td>`;
     }).join('');
-    return `<tr${isTotal ? ' class="total-row"' : ''}>${cells}</tr>`;
+    return `<tr>${cells}</tr>`;
   }).join('');
   document.getElementById('post-preview').innerHTML =
     `<table class="post-table"><thead><tr>${th}</tr></thead><tbody>${rows}</tbody></table>`;
@@ -848,13 +842,13 @@ async function doPost() {
 
   const values = buildPayload();
   try {
-    const range = encodeURIComponent(`'${teeTime}'!B2:J11`);
+    const range = encodeURIComponent(`'${teeTime}'!B2:J10`);
     const res   = await fetch(
       `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${range}?valueInputOption=RAW`,
       {
         method:  'PUT',
         headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ range: `'${teeTime}'!B2:J11`, majorDimension: 'ROWS', values }),
+        body:    JSON.stringify({ range: `'${teeTime}'!B2:J10`, majorDimension: 'ROWS', values }),
       }
     );
     const data = await res.json();
