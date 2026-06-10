@@ -284,7 +284,7 @@ input::placeholder { color: var(--text3); }
     <div class="signin-screen">
       <div style="font-size:48px;margin-bottom:16px;">⛳</div>
       <h2>Men's League</h2>
-      <p>Sign in with Google to load player names from the sheet and post your scores.</p>
+      <p>Sign in with Google to load player names and post scores to the league sheet. The app only accesses the Men's League Score Card spreadsheet — nothing else in your Google account.</p>
       <button class="btn-google" onclick="handleGoogleAuth()">
         <svg viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg">
           <path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z"/>
@@ -501,7 +501,7 @@ function handleGoogleAuth() {
     client_id:     CLIENT_ID,
     redirect_uri:  location.origin + location.pathname,
     response_type: 'token',
-    scope:         'https://www.googleapis.com/auth/spreadsheets',
+    scope:         'https://www.googleapis.com/auth/drive.file',
     prompt:        'select_account',
   });
   const w = window.open(
