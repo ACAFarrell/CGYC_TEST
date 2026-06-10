@@ -403,16 +403,7 @@ const CLIENT_ID = '902154704405-ctib443s4l03di4daat3tk427cuqc5mf.apps.googleuser
 const PAR = [4,4,4,4,5,3,4,3,4];
 const SI  = [3,5,4,1,8,6,7,9,2];
 
-const TEE_TIMES = [
-  'A07:54','A10:36','A10:45','A10:54','A11:03','A11:12','A11:21','A11:30','A11:39',
-  'A11:48','A11:57','A12:06','A12:15','A12:24','A12:33','A12:42','A12:51',
-  'P1:00','P1:09','P1:18','P1:27','P1:36','P1:45','P1:54',
-  'P2:03','P2:12','P2:21','P2:30','P2:39','P2:48','P2:57',
-  'P3:06','P3:15','P3:24','P3:33','P3:42','P3:51',
-  'P4:00','P4:09','P4:18','P4:27','P4:36','P4:45','P4:54',
-  'P5:03','P5:12','P5:21','P5:30','P5:39','P5:48','P5:57',
-  'P6:06','P6:15','P6:24','P6:33','P6:42','P6:51','P7:00'
-];
+// TEE_TIMES loaded dynamically from sheet on sign-in
 
 // ─────────────────────────────────────────────
 // State
@@ -533,13 +524,37 @@ function signOut() {
   show('screen-signin');
 }
 
-function onSignedIn() {
-  const sel = document.getElementById('tee-select');
-  sel.innerHTML = TEE_TIMES.map(t =>
-    `<option value="${t}"${t === 'P4:27' ? ' selected' : ''}>${t}</option>`
-  ).join('');
+async function onSignedIn() {
   show('screen-setup');
-  loadPlayers();
+  const sel = document.getElementById('tee-select');
+  const prev = document.getElementById('player-preview');
+  document.getElementById('start-btn').disabled = true;
+  sel.innerHTML = '<option>Loading tabs…</option>';
+  prev.innerHTML = '<div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text2);"><div class="spinner"></div>Loading…</div>';
+
+  try {
+    // Fetch spreadsheet metadata to get all sheet/tab names
+    const res  = await fetch(
+      `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}?fields=sheets.properties.title`,
+      { headers: { Authorization: `Bearer ${accessToken}` } }
+    );
+    const data = await res.json();
+    if (data.error) throw new Error(data.error.message);
+
+    // Only keep tabs that look like tee times: A or P followed by digits:digits
+    const TEE_PATTERN = /^[AP]\d+:\d+$/;
+    const tabs = data.sheets
+      .map(s => s.properties.title)
+      .filter(t => TEE_PATTERN.test(t));
+
+    if (!tabs.length) throw new Error('No tee time tabs found in the sheet.');
+
+    sel.innerHTML = tabs.map(t => `<option value="${t}">${t}</option>`).join('');
+    loadPlayers();
+  } catch(e) {
+    sel.innerHTML = '<option>Error loading tabs</option>';
+    prev.innerHTML = `<div style="font-size:13px;color:var(--red);">⚠ ${e.message}</div>`;
+  }
 }
 
 // ─────────────────────────────────────────────
@@ -881,7 +896,7 @@ async function doPost() {
 }
 
 function goEditFromDone() { show('screen-scoring'); renderScoring(); }
-function goBack()         { hasPosted = false; show('screen-setup'); loadPlayers(); }
+function goBack() { hasPosted = false; onSignedIn(); }
 </script>
 </body>
 </html>
