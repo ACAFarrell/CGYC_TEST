@@ -671,6 +671,11 @@ function renderPlayers() {
       ? `<span class="badge" style="${GROSS_STYLE[gk]}">${sc.score}</span>` : '';
     const ptsBadge = pts != null
       ? `<span class="badge" style="${PTS_STYLE[pts]}">${PTS_LABEL[pts]}</span>` : '';
+    const scoreOpts = [1,2,3,4,5,6,7,8].map(n =>
+      `<option value="${n}"${sc.score===n?' selected':''}>${n}</option>`).join('');
+    const puttsOpts = [0,1,2,3,4,5,6].map(n =>
+      `<option value="${n}"${sc.putts===n?' selected':''}>${n}</option>`).join('');
+
     const card = document.createElement('div');
     card.className = 'player-card';
     card.innerHTML = `
@@ -682,21 +687,15 @@ function renderPlayers() {
       <div class="inputs-row">
         <div class="input-group">
           <label>Score</label>
-          <div class="stepper">
-            <button class="step-btn" onclick="adjust(${pi},'score',-1)">−</button>
-            <input type="number" min="1" max="15" value="${sc.score ?? ''}" placeholder="—"
-              oninput="setVal(${pi},'score',this.value)"/>
-            <button class="step-btn" onclick="adjust(${pi},'score',1)">+</button>
-          </div>
+          <select onchange="setVal(${pi},'score',this.value)" style="font-size:22px;font-weight:600;font-family:var(--mono);text-align:center;">
+            <option value="">—</option>${scoreOpts}
+          </select>
         </div>
         <div class="input-group">
           <label>Putts</label>
-          <div class="stepper">
-            <button class="step-btn" onclick="adjust(${pi},'putts',-1)">−</button>
-            <input type="number" min="0" max="9" value="${sc.putts ?? ''}" placeholder="—"
-              oninput="setVal(${pi},'putts',this.value)"/>
-            <button class="step-btn" onclick="adjust(${pi},'putts',1)">+</button>
-          </div>
+          <select onchange="setVal(${pi},'putts',this.value)" style="font-size:22px;font-weight:600;font-family:var(--mono);text-align:center;">
+            <option value="">—</option>${puttsOpts}
+          </select>
         </div>
       </div>`;
     grid.appendChild(card);
@@ -724,11 +723,6 @@ function setVal(pi, field, val) {
   const n = parseInt(val);
   scores[pi][currentHole][field] = (!isNaN(n) && n >= 0) ? n : null;
   renderTotals(); renderPips(); renderPlayers();
-}
-function adjust(pi, field, delta) {
-  const cur = scores[pi][currentHole][field] ?? (field === 'score' ? PAR[currentHole] : 2);
-  scores[pi][currentHole][field] = Math.max(field === 'putts' ? 0 : 1, cur + delta);
-  renderPlayers(); renderTotals();
 }
 function prevHole() { if (currentHole > 0) { currentHole--; renderScoring(); } }
 function nextHole() { if (currentHole < 8) { currentHole++; renderScoring(); } }
